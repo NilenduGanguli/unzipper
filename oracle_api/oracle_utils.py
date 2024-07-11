@@ -2,8 +2,9 @@ import cx_Oracle
 import json
 
 class OracleDBUtility:
-    def __init__(self, user, password, dsn):
-        self.connection = cx_Oracle.connect(user, password, dsn)
+    def __init__(self, host, port, user, password, sid):
+        self.dsn = cx_Oracle.makedsn(host, port, sid=sid)
+        self.connection = cx_Oracle.connect(user, password, self.dsn)
         self.cursor = self.connection.cursor()
 
     def execute_query(self, query):
