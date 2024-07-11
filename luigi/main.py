@@ -28,34 +28,48 @@ class ProcessFileTask(luigi.Task):
         with self.output().open('w') as out_file:
             out_file.write(f"Processed {self.file_path}")
 
-class PushToQueueTask(luigi.Task):
-    file_path = luigi.Parameter()
-
-    def requires(self):
-        return ProcessFileTask(file_path=self.file_path)
-
-    def output(self):
-        return luigi.LocalTarget(f"{self.file_path}.queued")
-
-    def run(self):
-        push_to_queue(self.file_path)
-        with self.output().open('w') as out_file:
-            out_file.write(f"Queued {self.file_path}")
-
 class WorkerTask(luigi.Task):
     task_list = luigi.ListParameter()
 
+    def output(self):
+        return luigi.LocalTarget(f"worker_output_{hash(str(self.task_list))}.json")
+
     def requires(self):
-        return [PushToQueueTask(file_path=fp) for fp in self.task_list]
+        return [ProcessFileTask(file_path=fp) for fp in self.task_list]
 
     def run(self):
-        pass
+        processed_files = []
+        for task in self.requires():
+            processed_files.append(task.output().path)
+        
+        with self.output().open('w') as out_file:
+            json.dump(processed_files, out_file)
+
+class PushToQueueTask(luigi.Task):
+    worker_task = luigi.TaskParameter()
+
+    def requires(self):
+        return self.worker_task
+
+    def output(self):
+        return luigi.LocalTarget(f"{self.worker_task.output().path}.queued")
+
+    def run(self):
+        with self.input().open('r') as in_file:
+            processed_files = json.load(in_file)
+
+        for file_path in processed_files:
+            push_to_queue(file_path)
+        
+        with self.output().open('w') as out_file:
+            out_file.write("All files have been queued")
 
 class MasterTask(luigi.WrapperTask):
     worker_tasks = luigi.ListParameter()
 
     def requires(self):
-        return [WorkerTask(task_list=tasks) for tasks in self.worker_tasks]
+        worker_tasks = [WorkerTask(task_list=tasks) for tasks in self.worker_tasks]
+        return [PushToQueueTask(worker_task=wt) for wt in worker_tasks]
 
 if __name__ == "__main__":
     worker_tasks = get_worker_tasks()
