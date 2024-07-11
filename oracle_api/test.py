@@ -22,3 +22,19 @@ print(insert_result)
 updates = {"column1": "new_value", "primary_key_column": "primary_key_value"}
 update_result = db_util.update_record("your_table", "primary_key_column", updates)
 print(update_result)
+
+# export ORACLE_USER="your_username"
+# export ORACLE_PASSWORD="your_password"
+# export ORACLE_HOSTNAME="your_hostname"
+# export ORACLE_PORT="your_port"
+# export ORACLE_SID="your_sid"
+
+import os
+
+
+# Retrieve environment variables
+user = os.getenv('ORACLE_USER')
+password = os.getenv('ORACLE_PASSWORD')
+hostname = os.getenv('ORACLE_HOSTNAME')
+port = os.getenv('ORACLE_PORT')
+sid = os.getenv('ORACLE_SID')
