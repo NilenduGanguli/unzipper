@@ -32,9 +32,14 @@ print(update_result)
 import os
 
 
-# Retrieve environment variables
-user = os.getenv('ORACLE_USER')
-password = os.getenv('ORACLE_PASSWORD')
-hostname = os.getenv('ORACLE_HOSTNAME')
-port = os.getenv('ORACLE_PORT')
-sid = os.getenv('ORACLE_SID')
+def get_db():
+    user = os.getenv('ORACLE_USER')
+    password = os.getenv('ORACLE_PASSWORD')
+    host = os.getenv('ORACLE_HOSTNAME')
+    port = os.getenv('ORACLE_PORT')
+    sid = os.getenv('ORACLE_SID')
+    
+    if not all([user, password, host, port, sid]):
+        raise HTTPException(status_code=500, detail="Database configuration environment variables are not set properly.")
+    
+    return OracleDBUtility(host, port, user, password, sid)
