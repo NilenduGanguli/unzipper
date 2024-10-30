@@ -1,8 +1,6 @@
 import zipfile
 import os
 from pathlib import Path
-from rich.tree import Tree
-from rich import print
 
 def unzip_nested_zip(zip_path, extract_dir):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -18,13 +16,15 @@ def unzip_nested_zip(zip_path, extract_dir):
             unzip_nested_zip(file_path, nested_dir)
             file_path.unlink()  # Remove the nested zip file after extracting
 
-def build_tree(directory, tree):
-    for path in sorted(directory.iterdir()):
+def build_tree(directory, prefix=""):
+    contents = list(directory.iterdir())
+    pointers = ["├── "] * (len(contents) - 1) + ["└── "]
+    
+    for pointer, path in zip(pointers, contents):
+        print(prefix + pointer + path.name)
         if path.is_dir():
-            branch = tree.add(f"[bold cyan]{path.name}[/]")
-            build_tree(path, branch)
-        else:
-            tree.add(f"[green]{path.name}[/]")
+            extension = "│   " if pointer == "├── " else "    "
+            build_tree(path, prefix + extension)
 
 def main(zip_path):
     extract_dir = Path("extracted_files")
@@ -33,10 +33,9 @@ def main(zip_path):
     # Unzip all nested zips
     unzip_nested_zip(Path(zip_path), extract_dir)
 
-    # Create and display tree structure
-    tree = Tree(f"[bold magenta]{extract_dir.name}[/]")
-    build_tree(extract_dir, tree)
-    print(tree)
+    # Display tree structure
+    print(f"{extract_dir.name}/")
+    build_tree(extract_dir)
 
 if __name__ == "__main__":
     zip_file_path = input("Enter the path of the zip file: ")
